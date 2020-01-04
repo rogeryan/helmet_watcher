@@ -2,7 +2,9 @@ from configuration import IoU_threshold, IMAGE_HEIGHT, IMAGE_WIDTH, background_s
 import numpy as np
 from utils import IoU
 import tensorflow as tf
+import logging
 
+logger = logging.getLogger()
 class LabelAnchors():
     def __init__(self, anchors, labels, class_preds):
         # anchors : [batch_size, total number of anchors, 4]
@@ -94,6 +96,14 @@ class LabelAnchors():
         offset_list_array = np.array(offset_list)
         mask_list_array = np.array(mask_list)
         anchor_true_label_list_array = np.array(anchor_true_label_list)
+        #此处可能有问题
+        if len(anchor_true_label_list_array.shape) < 2:
+            logger.info(f'anchor:{self.anchors}')
+            logger.info(f'labels:{self.labels}')
+            logger.info(f'class_preds:{self.class_preds}')
+            logger.info(
+                f'anchor_true_label_list_array:{anchor_true_label_list_array}')
+
         return offset_list_array, mask_list_array, anchor_true_label_list_array
 
 

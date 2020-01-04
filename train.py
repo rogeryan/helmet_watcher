@@ -6,6 +6,32 @@ from configuration import IMAGE_HEIGHT, IMAGE_WIDTH, BATCH_SIZE, \
 from core.label_anchors import LabelAnchors
 from core.loss import SmoothL1Loss
 import math
+import os
+import logging
+import time
+
+
+def init_log_config():
+    """
+    初始化日志相关配置
+    :return:
+    """
+    global logger
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    log_path = os.path.join(os.getcwd(), 'logs')
+    if not os.path.exists(log_path):
+        os.makedirs(log_path)
+    log_name = os.path.join(log_path, 'train.log')
+    sh = logging.StreamHandler()
+    fh = logging.FileHandler(log_name, mode='w')
+    fh.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(
+        "%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s")
+    fh.setFormatter(formatter)
+    sh.setFormatter(formatter)
+    logger.addHandler(sh)
+    logger.addHandler(fh)
 
 if __name__ == '__main__':
     # GPU settings
@@ -15,12 +41,16 @@ if __name__ == '__main__':
             tf.config.experimental.set_memory_growth(gpu, True)
 
     # get datasets
+    t0 = time.time()
     parse = ParsePascalVOC()
     train_dataset, test_dataset, train_count, test_count = parse.split_dataset()
-
+    t1 = time.time()
+    logger.info(f'数据加载完成，耗时：{t1 - t0}')
     # initialize model
     model = ssd.SSD()
     model.build(input_shape=(None, IMAGE_HEIGHT, IMAGE_WIDTH, CHANNELS))
+    t0 = time.time()
+    logger.info(f'模型配置完成，耗时：{t0- t1}')
     model.summary()
 
     # metrics
@@ -46,10 +76,9 @@ if __name__ == '__main__':
             anchors, class_preds, box_preds = model(images)
             label_anchors = LabelAnchors(anchors=anchors, labels=labels, class_preds=class_preds)
             box_target, box_mask, cls_target = label_anchors.get_results()
-            # print("class_preds = {}".format(class_preds))
-            # print(class_preds.shape)
-            # print("cls_target = {}".format(cls_target))
-            # print(cls_target.shape)
+            logger.info(
+                f'class_preds type:{type(cls_target)}, shape: {class_preds.shape}')
+            logger.info(f'cls_target type:{type(cls_target)}, shape: {cls_target.shape}')
             cls_target = tf.dtypes.cast(cls_target, tf.int32)
             cls_target_onehot = tf.one_hot(indices=cls_target, depth=NUM_CLASSES + 1)
             cls_loss = train_cls_loss(y_pred=class_preds, y_true=cls_target_onehot)

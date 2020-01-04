@@ -6,7 +6,10 @@ import tensorflow as tf
 from PIL import Image
 from preprocess import preprocess_image
 from utils.dataset_format import get_length_of_dataset
+import logging
 
+
+logger = logging.getLogger()
 class ParsePascalVOC():
     def __init__(self):
         super(ParsePascalVOC, self).__init__()
@@ -43,7 +46,7 @@ class ParsePascalVOC():
         image_path_list = []
         all_boxes_list = []
         for item in os.listdir(self.all_xml_dir):
-            print("Processing file : {}".format(item))
+            logging.debug("Processing file : {}".format(item))
             item_dir = os.path.join(self.all_xml_dir, item)
             image_name, boxes_list = self.__parse_xml(xml=item_dir)
             image_path_list.append(os.path.join(self.all_image_dir, image_name))
@@ -74,7 +77,7 @@ class ParsePascalVOC():
     def __get_labels(self, labels, image_path):
         label_list = []
         for i in range(len(labels)):
-            print("Processing label of picture : {}".format(image_path[i]))
+            logger.debug("Processing label of picture : {}".format(image_path[i]))
             img = Image.open(image_path[i])
             w = img.size[0]
             h = img.size[1]
